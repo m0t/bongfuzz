@@ -18,7 +18,6 @@
 #         fuzz inputfile to outputfile
 #         call prog on fuzzed input
 
-
 import subprocess 
 import threading
 import getopt
@@ -38,7 +37,8 @@ url_list = "listfile.txt"
 #XXX: do better than this
 crash_bin = "C:\\crashdump.test"
 #XXX: file:/// is needed only for firefox, need a way to set prefix when opening test_case
-exe_path='C:\\program files\\mozilla firefox\\firefox.exe -new-window file:///'
+exe_path='C:\\program files\\mozilla firefox\\firefox.exe -new-window'
+prefix="file:///"
 restoreFlag = False
 debugFlag = False
 iterations=1000
@@ -119,9 +119,17 @@ if __name__ == "__main__":
                 #fuzz file and start process with test case
                 DEBUG("test_number %d, iteration %d, testcase fuzzed, creating process: %s\n" % (test_number, currit, exe_path))
                 #DEBUG(exe_path+fuzzedcase)
-                inst = subprocess.Popen(exe_path + fuzzedcase) 
+                #inst = subprocess.Popen(exe_path + fuzzedcase)
+                procmon = process_monitor_pedrpc_server("127.0.0.1", 2600, crashdump, start_commands=exe_path )
+                procmon.start_target(prefix+fuzzedcase)
                 time.sleep(timeInterval)
-                inst.kill()
+                if procmon.post_send() == False:
+                    outfile=""
+                    DEBUG("test number %d successful, saving to: %s" % (test_number, outfile))
+                    #open outfile and save
+                    os.system("cp temp.html %s" % outfile)
+                procmon.stop_target()
+                #inst.kill()
             
     except KeyboardInterrupt:
         #save file line and iter. count
